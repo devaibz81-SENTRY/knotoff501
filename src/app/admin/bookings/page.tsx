@@ -2,12 +2,14 @@
 
 import { useQuery } from "convex/react"
 import { api } from "../../../../convex/_generated/api"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ReceiptText, ScanLine, CheckCircle2 } from "lucide-react"
 
 export default function BookingsAndReceiptsPage() {
   const bookings = useQuery(api.adminApi.getBookings)
+  const router = useRouter()
 
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -17,7 +19,7 @@ export default function BookingsAndReceiptsPage() {
           <p className="text-muted-foreground">Manage appointments, scan payments, and generate receipts.</p>
         </div>
         <div className="flex gap-2">
-           <Button variant="outline" className="gap-2 border-[#00A3A8] text-[#00A3A8] hover:bg-[#00a3a8]/10 bg-white">
+           <Button variant="outline" className="gap-2 border-[#00A3A8] text-[#00A3A8] hover:bg-[#00a3a8]/10 bg-white" onClick={() => router.push('/admin/scanner')}>
               <ScanLine className="w-4 h-4"/> Scan Document / ID
            </Button>
            <Button className="gap-2">
@@ -50,9 +52,9 @@ export default function BookingsAndReceiptsPage() {
                                <div className="text-sm text-slate-500">Status: {b.status} • Total: ${b.totalPrice}</div>
                             </div>
                             <div className="flex gap-2">
-                               <Button variant="outline" size="sm">Log Payment</Button>
+                               <Button variant="outline" size="sm" onClick={() => router.push('/admin/scanner')}>Log Payment</Button>
                                <Button variant="secondary" size="sm" className="gap-2">
-                                  <ReceiptText className="w-3 h-3"/> PDF
+                                  <ReceiptText className="w-3 h-3"/> PDF & JPEG
                                </Button>
                             </div>
                          </div>
@@ -75,7 +77,7 @@ export default function BookingsAndReceiptsPage() {
                      <h4 className="font-semibold">Paperless Scanner</h4>
                   </div>
                   <p className="text-sm text-slate-500 mb-3">Upload an ID or bank transfer receipt to auto-extract details.</p>
-                  <Button className="w-full text-xs" variant="outline">Open Scanner Module</Button>
+                  <Button className="w-full text-xs" variant="outline" onClick={() => router.push('/admin/scanner')}>Open Scanner Module</Button>
                </div>
                
                <div className="p-4 bg-white rounded-lg border shadow-sm">
