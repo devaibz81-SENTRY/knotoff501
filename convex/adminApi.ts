@@ -35,6 +35,17 @@ export const getSlotsByDate = query({
   },
 });
 
+export const getAvailableSlotsByDate = query({
+  args: { date: v.string() },
+  handler: async (ctx, args) => {
+    const slots = await ctx.db
+      .query("timeSlots")
+      .withIndex("by_date", (q) => q.eq("date", args.date))
+      .collect();
+    return slots.filter(s => s.status === "AVAILABLE");
+  },
+});
+
 export const addSlot = mutation({
   args: {
     date: v.string(),
@@ -79,25 +90,46 @@ export const addCustomer = mutation({
 export const getBookings = query({
   args: {},
   handler: async (ctx) => {
-    // Basic join simulator could be here, but we return raw for now
     return await ctx.db.query("bookings").order("desc").collect();
   },
 });
 
-export const createBookingLink = mutation({
-  args: { timeSlotId: v.id("timeSlots") },
+// Public booking: create customer + booking + mark slot TAKEN
+export const createPublicBooking = mutation({
+  args: {
+    slotId: v.id("timeSlots"),
+    name: v.string(),
+    email: v.string(),
+    phone: v.string(),
+    whatsapp: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    serviceId: v.optional(v.id("services")),
+  },
   handler: async (ctx, args) => {
-    const token = crypto.randomUUID();
-    // Pre-create an empty pending booking locked to a slot
+    const slot = await ctx.db.get(args.slotId);
+    if (!slot || slot.status !== "AVAILABLE") {
+      throw new Error("This slot is no longer available.");
+    }
+
+    const customerId = await ctx.db.insert("customers", {
+      name: args.name,
+      email: args.email,
+      phone: args.phone,
+      whatsapp: args.whatsapp,
+      notes: args.notes,
+    });
+
     const bookingId = await ctx.db.insert("bookings", {
-      customerId: "jh790m4kqh723q9xjh" as any, // Needs real logic in public flow
-      timeSlotId: args.timeSlotId,
-      serviceIds: [],
-      totalPrice: 0,
-      status: "PENDING",
-      bookingLinkToken: token,
+      customerId,
+      timeSlotId: args.slotId,
+      serviceIds: args.serviceId ? [args.serviceId] : [],
+      totalPrice: 60,
+      status: "CONFIRMED",
       receiptGenerated: false,
     });
-    return token;
+
+    await ctx.db.patch(args.slotId, { status: "TAKEN", bookingId });
+
+    return bookingId;
   },
 });
